@@ -1,2 +1,2 @@
 # email-webcam-detection
-Python application that sends me an email when it detects something via webcam
+Python application that emails me when it detects something via webcam
