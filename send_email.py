@@ -9,7 +9,14 @@ RECEIVER = "tmd526@gmail.com"
 
 
 def send_email(image_path):
-    print("send email function started")
+    """
+    takes image_path which should be an image file.
+    uses email.message to construct email message
+    image file is opened in rb and then attached to email.
+
+    :param image_path:
+    :return:
+    """
     email_message = EmailMessage()
     email_message["Subject"] = "New customer showed up!"
     email_message.set_content("New customer!")
@@ -21,11 +28,9 @@ def send_email(image_path):
     gmail = smtplib.SMTP("smtp.gmail.com", 587)
     gmail.ehlo()
     gmail.starttls()
-    gmail.login(SENDER, PASSKEY)
+    gmail.login(SENDER, PASSKEY) # currently have a bug with this feature.
     gmail.sendmail(SENDER, RECEIVER, email_message.as_string())
     gmail.quit()
-    print("send email function ended")
-
 
 if __name__ == "__main__":
     send_email(image_path="images/19.png")
