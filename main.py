@@ -60,7 +60,6 @@ while True:
         clean_thread.daemon = True
 
         email_thread.start()
-        clean_thread.start()
 
     cv2.imshow("My video", frame)
 
@@ -69,4 +68,5 @@ while True:
     if key == ord("q"):
         break
 
+clean_thread.start()
 video.release()
