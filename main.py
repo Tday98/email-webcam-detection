@@ -33,6 +33,9 @@ while True:
     if first_frame is None:
         first_frame = gray_frame_gau
 
+    clean_thread = Thread(target=clean_folder)
+    clean_thread.daemon = True
+
     # converts image to blurred grayscale to make object recognition easier.
     delta_frame = cv2.absdiff(first_frame, gray_frame_gau)
     cv2.imshow("My video", delta_frame)
@@ -61,10 +64,8 @@ while True:
     status_list = status_list[-2:]
 
     if status_list[0] == 1 and status_list[1] == 0:
-        email_thread = Thread(target=send_email, args=(service, image_with_object, ))
+        email_thread = Thread(target=send_email, args=(service, image_with_object))
         email_thread.daemon = True
-        clean_thread = Thread(target=clean_folder)
-        clean_thread.daemon = True
 
         email_thread.start()
 

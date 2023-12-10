@@ -82,7 +82,7 @@ def send_email(service, image_path):
     message.attach(image)
     body_message = {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
     service.users().messages().send(userId="me", body=body_message).execute()
-
+    print("Email sent!")
 
 if __name__ == "__main__":
     send_email("test.jpg")
