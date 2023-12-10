@@ -1,36 +1,88 @@
-import smtplib
-import os
-import imghdr
-from email.message import EmailMessage
+import os.path
 
-PASSKEY = os.getenv('PASSKEY')
-SENDER = "tmd526@gmail.com"
-RECEIVER = "tmd526@gmail.com"
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+# for encoding/decoding messages in base64
+from base64 import urlsafe_b64decode, urlsafe_b64encode
+# for dealing with attachement MIME types
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from mimetypes import guess_type as guess_mime_type
+
+# If modifying these scopes, delete the file token.json.
+SCOPES = ["https://mail.google.com/"]
+
+EMAIL = "tmd526@gmail.com"
 
 
-def send_email(image_path):
+def get_credentials():
+    """Shows basic usage of the Gmail API.
+  Lists the user's Gmail labels.
+  """
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                "credentials.json", SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open("token.json", "w") as token:
+            token.write(creds.to_json())
+
+    try:
+        # Call the Gmail API
+        service = build("gmail", "v1", credentials=creds)
+        results = service.users().labels().list(userId="me").execute()
+        labels = results.get("labels", [])
+
+        if not labels:
+            print("No labels found.")
+            return
+        return service
+
+    except HttpError as error:
+        # TODO(developer) - Handle errors from gmail API.
+        print(f"An error occurred: {error}")
+
+
+def send_email(service, image_path):
     """
     takes image_path which should be an image file.
-    uses email.message to construct email message
-    image file is opened in rb and then attached to email.
 
+    :param service:
     :param image_path:
     :return:
     """
-    email_message = EmailMessage()
-    email_message["Subject"] = "New customer showed up!"
-    email_message.set_content("New customer!")
 
-    with open(image_path, "rb") as file:
-        content = file.read()
-    email_message.add_attachment(content, maintype="image", subtype=imghdr.what(None, content))
+    message = MIMEMultipart()
+    message['to'] = EMAIL
+    message['from'] = EMAIL
+    message['subject'] = "New client!"
+    message.attach(MIMEText("New client came into the store!"))
 
-    gmail = smtplib.SMTP("smtp.gmail.com", 587)
-    gmail.ehlo()
-    gmail.starttls()
-    gmail.login(SENDER, PASSKEY) # currently have a bug with this feature.
-    gmail.sendmail(SENDER, RECEIVER, email_message.as_string())
-    gmail.quit()
+    fp = open(image_path, 'rb')
+    image = MIMEImage(fp.read())
+    fp.close()
+    message.attach(image)
+    body_message = {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
+    service.users().messages().send(userId="me", body=body_message).execute()
+
 
 if __name__ == "__main__":
-    send_email(image_path="images/19.png")
+    send_email("test.jpg")
